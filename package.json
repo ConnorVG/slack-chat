@@ -1,0 +1,11 @@
+{
+  "name": "slack-chat.git",
+  "version": "0.0.0",
+  "scripts": {
+    "start": "node ./bin/start"
+  },
+  "dependencies": {
+    "querystring": "^0.2.0",
+    "ws": "^0.6.5"
+  }
+}

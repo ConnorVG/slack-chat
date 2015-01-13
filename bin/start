@@ -1,0 +1,86 @@
+#!/usr/bin/env node
+
+/**
+ * Module dependencies.
+ */
+
+var app = require('../src/app');
+var slack = require('../src/slack');
+var commands = require('../src/commands');
+require('../src/commands/_impl.js')
+
+/**
+ * Get port from environment and store in Express.
+ */
+
+var port = parseInt(process.env.PORT, 10) || 3000;
+app.set('port', port);
+
+/**
+ * Create HTTP server.
+ */
+
+var server = app.createServer();
+
+/**
+ * Listen on provided port, on all network interfaces.
+ */
+
+server.on('error', onError);
+server.on('listening', onListening);
+server.on('slack.message', onMessage);
+server.listen(app.get('port'));
+
+/**
+ * Event listener for server "error" event.
+ */
+function onError (error) {
+  if (error.syscall !== 'listen') {
+    throw error;
+  }
+
+  // handle specific listen errors with friendly messages
+  switch (error.code) {
+    case 'EACCES':
+      console.error('Port ' + app.get('port') + ' requires elevated privileges');
+      process.exit(1);
+      break;
+    case 'EADDRINUSE':
+      console.error('Port ' + app.get('port') + ' is already in use');
+      process.exit(1);
+      break;
+    default:
+      throw error;
+  }
+}
+
+/**
+ * Event listener for server "listening" event.
+ */
+function onListening () {
+  console.log('Listening on port ' + app.get('port'));
+}
+
+/**
+ * Event listener for server "slack-event:message" event.
+ */
+function onMessage (data) {
+  if (data.subtype != null) {
+    return;
+  }
+
+  if (data.user === slack.user) {
+    return;
+  }
+
+  var response = commands.handle(data.text);
+  if (response == null || response === false) {
+    return;
+  }
+
+  server.send('respond.message', {
+    channel: data.channel,
+    user: data.user,
+    text: response
+  });
+}
